@@ -8,14 +8,45 @@ class MyFAB extends React.Component {
         super();
         this.state = {
             open : false,
+            colorFav : "grey",
         }
+    }
+
+    componentDidMount() {
+
+        if( this.props.boolFav == true){
+
+            this.setState( {
+                colorFav : 'orange'
+            })
+        }
+
+
+    }
+
+
+    AddFavorite (){
+
+        this.props.addFavorite(this.props.idWord);
+
+
+        if(this.state.colorFav =='grey'){
+            this.setState( {
+                colorFav : 'orange'
+            })
+        } else {
+            this.setState( {
+                colorFav : 'grey'
+            })
+        }
+
+
     }
 
 
     render(){
 
-        let { open } = this.state;
-
+        let { open , colorFav} = this.state;
 
         return (
             <Provider>
@@ -36,9 +67,10 @@ class MyFAB extends React.Component {
                                 onPress: () => console.log('Pressed email'),
                             },
                             {
-                                icon: 'bell',
-                                label: 'Remind',
-                                onPress: () => console.log('Pressed notifications'),
+                                icon: 'star',
+                                label: 'Favorite',
+                                color: colorFav,
+                                onPress: () => this.props.addFavorite(this.props.idWord),
                                 small: false,
                             },
                         ]}

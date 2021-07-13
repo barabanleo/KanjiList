@@ -9,6 +9,7 @@ import { FAB, Portal, Provider } from 'react-native-paper';
 
 import MyFAB from '../components/myFAB'
 import Dialog from "react-native-dialog";
+import {inline} from "react-native-web/dist/exports/StyleSheet/compile";
 
 
 
@@ -45,13 +46,27 @@ class ListWordScreen extends React.Component{
 
     componentDidMount() {
 
-        db.transaction(tx => {
-            tx.executeSql(
-                "SELECT * from items WHERE date_add = (?);",
-                [this.props.route.params.dateList],
-                ( _, { rows: { _array } }) =>  this.createRandomArray(_array)
-            );
-        });
+        if( this.props.route.params.dateList == "favoris") {
+
+            db.transaction(tx => {
+                tx.executeSql(
+                    "SELECT * from items WHERE favoris = 1;",
+                    [],
+                    ( _, { rows: { _array } }) =>  this.createRandomArray(_array)
+                );
+            });
+
+        } else {
+
+            db.transaction(tx => {
+                tx.executeSql(
+                    "SELECT * from items WHERE date_add = (?);",
+                    [this.props.route.params.dateList],
+                    ( _, { rows: { _array } }) =>  this.createRandomArray(_array)
+                );
+            });
+
+        }
 
     }
 
@@ -64,6 +79,33 @@ class ListWordScreen extends React.Component{
             index : index+1
         })
     }
+
+    addTomorowList(word) {
+
+        var today = new Date();
+
+        var month = (today.getMonth()+1).toString()
+        if(month < 10) {
+            month = 0+month
+        }
+
+        var day = (today.getDate()+1).toString()
+        if (day < 10){
+            day = 0+day
+        }
+
+        var date = today.getFullYear().toString()+month+day;
+
+        db.transaction(
+            tx => {
+                tx.executeSql("insert into items (word,date_add) values (? , ?)", [word, date]);
+            },
+            null,
+        );
+
+    }
+
+
 
     resetList() {
 
@@ -79,6 +121,17 @@ class ListWordScreen extends React.Component{
         this.setState({
             visible : true
         })
+    }
+
+
+    addFavorite(id) {
+
+        db.transaction(tx => {
+            tx.executeSql(
+                "UPDATE items SET favoris = (?) WHERE id = (?);",
+                [true , id],
+            );
+        });
     }
 
     render() {
@@ -111,6 +164,8 @@ class ListWordScreen extends React.Component{
         }
 
         else if(index == items.length){
+
+            console.log(items)
 
             return (
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor : "black" }}>
@@ -167,29 +222,47 @@ class ListWordScreen extends React.Component{
 
                     :
 
-                    <View>
+                    <View style={{ marginTop :'30%' , flex: 1, justifyContent: 'center'}} >
+                        <Text
+                            style={{ textAlign:'center' ,  color: "white", fontSize: 30, marginBottom: "10%" , alignItems : 'center' }}
+                        >
+                            {items[random[index]].word}
+                        </Text>
 
+                        <View style={{ textAlign : 'center' , alignSelf : "stretch" , flexDirection : "row"  , justifyContent : "space-between"}}>
 
-                    <Text
-                        style={{color: "white", fontSize: 20, padding: 50, marginBottom: "10%"}}
-                    >
-                        {items[random[index]].word}
+                            <TouchableOpacity
+                                onPress={ () => {this.nextWord()}}
+                                style={{
+                                    alignSelf : "stretch" ,
+                                    backgroundColor:  "#1c9963" ,
+                                    borderColor: "#000",
+                                    borderWidth: 1,
+                                    padding: 20 ,
+                                    margin : '10%',
+                                    color : 'white',
+                                }}>
+                                <Text style={{color : 'white'}}>Suivant</Text>
+                            </TouchableOpacity>
 
-                    </Text>
+                            <TouchableOpacity
+                                onPress={ () => {this.addTomorowList(items[random[index]].word)}}
+                                style={{
+                                    alignSelf : "stretch" ,
+                                    backgroundColor:  "#1c9963" ,
+                                    borderColor: "#000",
+                                    borderWidth: 1,
+                                    padding: 20 ,
+                                    margin : '10%',
+                                }}>
+                                <Text style={{color : 'white'}}>Demain</Text>
+                            </TouchableOpacity>
 
-                    <View style={{width : '66%'  , margin : '5%'}}>
-                    <Button
-                    title="Suivant"
-                    onPress={() => {this.nextWord()}}
-                    >
-                    </Button>
-
-                    </View>
-
+                        </View>
                     </View>
                 }
 
-                <MyFAB showDialog={this.showDialog.bind(this)} />
+                <MyFAB showDialog={this.showDialog.bind(this)} addFavorite={this.addFavorite.bind(this)} idWord={items[random[index]].id} boolFav={items[random[index]].favoris } />
 
 
                 <Dialog.Container visible={visible}>

@@ -18,24 +18,46 @@ class HomeScreen extends React.Component{
         items: null,
         refreshing:false,
         visible : false,
+        itemsFavoris : null,
     };
 
     componentDidMount() {
 
+
         db.transaction(tx => {
             tx.executeSql(
-                "create table if not exists items (id integer primary key not null, word text);"
+                "create table if not exists items (id integer primary key not null, word text , date_add int , favoris boolean );"
             );
         });
 
         db.transaction(tx => {
             tx.executeSql(
-                "SELECT DISTINCT date_add from items;",
+                "SELECT DISTINCT date_add from items ORDER BY date_add DESC;",
                 [],
-                ( _, { rows: { _array } }) => this.setState({ items: _array } )
+                ( _, { rows: { _array } }) => this.onChangeItems(_array)
             );
         });
 
+
+    }
+
+    getTodayDate() {
+
+        var today = new Date();
+
+        var month = (today.getMonth()+1).toString()
+        if(month < 10) {
+            month = 0+month
+        }
+
+        var day = (today.getDate()).toString()
+        if (day < 10){
+            day = 0+day
+        }
+
+        var date = today.getFullYear().toString()+month+day;
+
+        return date;
     }
 
 
@@ -69,11 +91,33 @@ class HomeScreen extends React.Component{
     onRefresh() {
         db.transaction(tx => {
             tx.executeSql(
-                "SELECT DISTINCT date_add from items;",
+                "SELECT DISTINCT date_add from items ORDER BY date_add DESC;",
                 [],
-                ( _, { rows: { _array } }) => this.setState({ items: _array } )
+                ( _, { rows: { _array } }) => this.onChangeItems(_array)
             );
         });
+    }
+
+    onChangeItems(_array){
+
+        console.log(_array)
+
+        let today = this.getTodayDate();
+        for (const item in _array) {
+
+            if (today - _array[item].date_add == 0) {
+                _array[item].text = "Aujourdhui"
+            } else if (today - _array[item].date_add == -1) {
+                _array[item].text = "Hier"
+            } else if (today - _array[item].date_add == 1) {
+                _array[item].text = "Demain"
+            } else {
+                _array[item].text = (_array[item].date_add).toString();
+            }
+
+        }
+
+        this.setState({ items: _array });
     }
 
     showDialog() {
@@ -83,9 +127,6 @@ class HomeScreen extends React.Component{
     }
 
     onDeleteList(date_add) {
-
-        console.log("Hello")
-        console.log(date_add)
 
         db.transaction(tx => {
             tx.executeSql(
@@ -98,8 +139,6 @@ class HomeScreen extends React.Component{
                     })
                 });
         });
-
-
 
     }
 
@@ -115,10 +154,6 @@ class HomeScreen extends React.Component{
 
         const { items , visible} = this.state;
         const { navigate } = this.props.navigation;
-
-        console.log(items);
-
-
 
 
         return (
@@ -137,15 +172,41 @@ class HomeScreen extends React.Component{
                     style = {{ width : "100%" , fontSize : 20}}
                     >
 
+
+                        <TouchableOpacity
+                            key="favoris"
+                            onPress={ () => this.props.navigation.navigate('ListWord', {
+                                dateList : "favoris",
+                                name : "Favoris"
+                            })}
+                            style={{
+                                backgroundColor:  "#1c9963" ,
+                                borderColor: "#000",
+                                borderWidth: 1,
+                                padding: 20 ,
+                            }}>
+
+                            <View
+                                style={{flexDirection : 'row' , justifyContent:'space-between' }}
+                            >
+                                <Text style={{ color:  "#fff", fontSize : 20 }}>Favoris</Text>
+
+                            </View>
+
+
+                        </TouchableOpacity>
+
                         <FlatList
                             data={items}
+                            keyExtractor={(item, index) => index.toString()}
                             ItemSeparatorComponent={this.ListViewItemSeparator}
                             enableEmptySections={true}
                             renderItem={({item}) => (
                                 <TouchableOpacity
-                                    key={item.date_add}
+                                    key={(item.date_add).toString()}
                                     onPress={ () => this.props.navigation.navigate('ListWord', {
-                                        dateList : item.date_add
+                                        dateList : item.date_add,
+                                        name : item.text
                                     })}
                                     style={{
                                         backgroundColor:  "#1c9963" ,
@@ -157,7 +218,7 @@ class HomeScreen extends React.Component{
                                     <View
                                     style={{flexDirection : 'row' , justifyContent:'space-between' }}
                                     >
-                                        <Text style={{ color:  "#fff", fontSize : 20 }}>{item.date_add}</Text>
+                                        <Text style={{ color:  "#fff", fontSize : 20 }}>{item.text}</Text>
 
                                         <TouchableOpacity
                                             onPress={ () => this.showDialog()} >

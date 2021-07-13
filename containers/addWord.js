@@ -37,9 +37,10 @@ class AddWordScreen extends React.Component{
 
     componentDidMount() {
 
+
         db.transaction(tx => {
             tx.executeSql(
-                "create table if not exists items (id integer primary key not null, word text);"
+                "create table if not exists items (id integer primary key not null, word text , date_add int , favoris boolean );"
             );
         });
     }
