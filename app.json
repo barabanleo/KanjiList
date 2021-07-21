@@ -1,5 +1,6 @@
 {
   "android": {
-    "package": "com.fire.kanjilist"
+    "package": "com.fire.kanjilist",
+    "permissions": [ "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "INTERNET" , "MediaLibrary" ]
   }
 }
